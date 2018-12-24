@@ -35,6 +35,25 @@ public class GeografijaDAO {
         izmijeniGrad2 = conn.prepareStatement("UPDATE grad SET naziv = ?, broj_stanovnika = ?, drzava = ? WHERE id = ?");
     }
 
+    private void napraviTabele() throws SQLException {
+        Statement stmt = conn.createStatement();
+        String generirajDrzave = "CREATE TABLE \"drzava\" ( `id` INTEGER, `naziv` TEXT, `glavni_grad` INTEGER," +
+                "FOREIGN KEY(`glavni_grad`) REFERENCES `grad`, PRIMARY KEY(`id`) )";
+        try {
+            stmt.executeQuery(generirajDrzave);
+        } catch (SQLException e) {
+            // Drzave vec postoje
+        }
+        String generirajGradove = "CREATE TABLE \"grad\" ( `id` INTEGER, `naziv` TEXT, `broj_stanovnika` INTEGER," +
+                " `drzava` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`drzava`) REFERENCES `drzava` )";
+        try {
+            stmt.executeQuery(generirajGradove);
+        } catch (SQLException e) {
+            // Gradovi vec postoje
+        }
+        dodajPodatke();
+    }
+
     private static void initialize() throws SQLException {
         instance = new GeografijaDAO();
     }
@@ -44,6 +63,7 @@ public class GeografijaDAO {
         conn = DriverManager.getConnection(url);
         try {
             pripremiUpite();
+            napraviTabele();
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -171,5 +191,49 @@ public class GeografijaDAO {
         stmt1.setInt(2, g.getBrojStanovnika());
         stmt1.setInt(3, id);
         stmt1.executeUpdate();
+    }
+
+    private void dodajPodatke() throws SQLException {
+        Grad pariz = new Grad();
+        pariz.setNaziv("Pariz");
+        pariz.setBrojStanovnika(2200000);
+        Drzava francuska = new Drzava();
+        francuska.setNaziv("Francuska");
+        francuska.setGlavniGrad(pariz);
+        pariz.setDrzava(francuska);
+        dodajDrzavu(francuska);
+        dodajGrad(pariz);
+
+        Grad london = new Grad();
+        london.setNaziv("London");
+        london.setBrojStanovnika(8136000);
+        Drzava velikaBritanija = new Drzava();
+        velikaBritanija.setNaziv("Velika Britanija");
+        velikaBritanija.setGlavniGrad(london);
+        london.setDrzava(velikaBritanija);
+        dodajDrzavu(velikaBritanija);
+        dodajGrad(london);
+
+        Grad bec = new Grad();
+        bec.setNaziv("Beč");
+        bec.setBrojStanovnika(1867000);
+        Drzava austrija = new Drzava();
+        austrija.setNaziv("Austrija");
+        austrija.setGlavniGrad(bec);
+        bec.setDrzava(austrija);
+        dodajDrzavu(austrija);
+        dodajGrad(bec);
+
+        Grad mancester = new Grad();
+        mancester.setNaziv("Manchester");
+        mancester.setBrojStanovnika(510746);
+        mancester.setDrzava(velikaBritanija);
+        dodajGrad(mancester);
+
+        Grad graz = new Grad();
+        graz.setNaziv("Graz");
+        graz.setBrojStanovnika(283869);
+        graz.setDrzava(austrija);
+        dodajGrad(graz);
     }
 }
