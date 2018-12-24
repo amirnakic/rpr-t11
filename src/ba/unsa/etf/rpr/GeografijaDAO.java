@@ -144,4 +144,16 @@ public class GeografijaDAO {
         stmt1.setInt(2, id);
         stmt1.executeUpdate();
     }
+
+    public void izmijeniGrad(Grad g) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+        stmt.setString(1, g.getDrzava().getNaziv());
+        ResultSet rs = stmt.executeQuery();
+        int id = rs.getInt(1);
+        PreparedStatement stmt1 = conn.prepareStatement("UPDATE grad SET naziv = ? , broj_stanovnika = ? , drzava = ? WHERE id = ?");
+        stmt1.setString(1, g.getNaziv());
+        stmt1.setInt(2, g.getBrojStanovnika());
+        stmt1.setInt(3, id);
+        stmt1.executeUpdate();
+    }
 }
