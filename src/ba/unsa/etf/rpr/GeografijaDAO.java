@@ -1,6 +1,7 @@
 package ba.unsa.etf.rpr;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class GeografijaDAO {
     private static GeografijaDAO instance = null;
@@ -100,4 +101,24 @@ public class GeografijaDAO {
         stmt.setString(1, drzava);
         stmt.executeUpdate();
     }
+
+    public ArrayList<Grad> gradovi() throws SQLException {
+        ArrayList<Grad> result  = new ArrayList<>();
+        PreparedStatement stmt = conn.prepareStatement("SELECT grad.id, grad.naziv, grad.broj_stanovnika, grad.drzava, drzava.id, drzava.naziv FROM grad, drzava WHERE drzava.id = grad.drzava ORDER BY broj_stanovnika DESC");
+        ResultSet rs = stmt.executeQuery();
+        while(rs.next()) {
+            Grad g = new Grad();
+            g.setNaziv(rs.getString(2));
+            g.setBrojStanovika(rs.getInt(3));
+            Drzava d = new Drzava();
+            d.setNaziv(rs.getString(6));
+            g.setDrzava(d);
+            if (rs.getInt(1) == rs.getInt(5))
+                d.setGlavniGrad(g);
+            result.add(g);
+        }
+        return result;
+    }
+
+    
 }
