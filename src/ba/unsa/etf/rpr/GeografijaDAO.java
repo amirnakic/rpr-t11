@@ -80,4 +80,24 @@ public class GeografijaDAO {
             return null;
         }
     }
+
+    public void obrisiGradoveUDrzavi(String drzava) throws SQLException {
+        int id;
+        PreparedStatement stmt = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+        stmt.setString(1, drzava);
+        ResultSet rs = stmt.executeQuery();
+        id = rs.getInt(1);
+        PreparedStatement stmt1 = conn.prepareStatement("DELETE * FROM grad WHERE drzava = ?");
+        stmt1.setInt(1, id);
+        stmt1.executeUpdate();
+    }
+
+    public void obrisiDrzavu(String drzava) throws SQLException {
+        if (nadjiDrzavu(drzava) == null)
+            return;
+        obrisiGradoveUDrzavi(drzava);
+        PreparedStatement stmt = conn.prepareStatement("DELETE * FROM drzava WHERE naziv = ?");
+        stmt.setString(1, drzava);
+        stmt.executeUpdate();
+    }
 }
