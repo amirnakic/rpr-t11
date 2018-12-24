@@ -58,4 +58,26 @@ public class GeografijaDAO {
             return null;
         }
     }
+
+    public Grad glavniGrad(String drzava) {
+        Drzava d = nadjiDrzavu(drzava);
+        if (d == null)
+            return null;
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT grad.naziv, grad.broj_stanovnika FROM grad WHERE drzava.naziv = ? AND drzava.id = grad.id");
+            stmt.setString(1, drzava);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.isClosed())
+                return null;
+            Grad g = new Grad();
+            g.setDrzava(d);
+            g.setNaziv(rs.getString(1));
+            g.setBrojStanovika(rs.getInt(2));
+            return g;
+        }
+        catch(SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
