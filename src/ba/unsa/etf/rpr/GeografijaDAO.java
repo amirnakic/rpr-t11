@@ -49,7 +49,7 @@ public class GeografijaDAO {
             d.setNaziv(rs.getString(1));
             Grad g = new Grad();
             g.setNaziv(rs.getString(2));
-            g.setBrojStanovika(rs.getInt(3));
+            g.setBrojStanovnika(rs.getInt(3));
             d.setGlavniGrad(g);
             g.setDrzava(d);
             return d;
@@ -73,7 +73,7 @@ public class GeografijaDAO {
             Grad g = new Grad();
             g.setDrzava(d);
             g.setNaziv(rs.getString(1));
-            g.setBrojStanovika(rs.getInt(2));
+            g.setBrojStanovnika(rs.getInt(2));
             return g;
         }
         catch(SQLException e) {
@@ -109,7 +109,7 @@ public class GeografijaDAO {
         while(rs.next()) {
             Grad g = new Grad();
             g.setNaziv(rs.getString(2));
-            g.setBrojStanovika(rs.getInt(3));
+            g.setBrojStanovnika(rs.getInt(3));
             Drzava d = new Drzava();
             d.setNaziv(rs.getString(6));
             g.setDrzava(d);
@@ -120,5 +120,16 @@ public class GeografijaDAO {
         return result;
     }
 
-    
+    public void dodajGrad(Grad g) throws SQLException {
+        int id;
+        PreparedStatement stmt = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+        stmt.setString(1, g.getDrzava().getNaziv());
+        ResultSet rs = stmt.executeQuery();
+        id = rs.getInt(1);
+        PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO grad(naziv, broj_stanovnika, drzava) VALUES(?, ?, ?) ");
+        stmt1.setString(1, g.getNaziv());
+        stmt1.setInt(2, g.getBrojStanovnika());
+        stmt1.setInt(3, id);
+        stmt1.executeUpdate();
+    }
 }
