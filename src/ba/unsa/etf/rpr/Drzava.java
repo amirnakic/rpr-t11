@@ -1,13 +1,13 @@
 package ba.unsa.etf.rpr;
 
-public class DrzavaDTO {
+public class Drzava {
     private String naziv;
-    private GradDTO glavniGrad;
+    private Grad glavniGrad;
 
-    public DrzavaDTO() {
+    public Drzava() {
     }
 
-    public DrzavaDTO(String naziv, GradDTO glavniGrad) {
+    public Drzava(String naziv, Grad glavniGrad) {
         this.naziv = naziv;
         this.glavniGrad = glavniGrad;
     }
@@ -20,11 +20,11 @@ public class DrzavaDTO {
         this.naziv = naziv;
     }
 
-    public GradDTO getGlavniGrad() {
+    public Grad getGlavniGrad() {
         return glavniGrad;
     }
 
-    public void setGlavniGrad(GradDTO glavniGrad) {
+    public void setGlavniGrad(Grad glavniGrad) {
         this.glavniGrad = glavniGrad;
     }
 }

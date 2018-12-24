@@ -1,14 +1,14 @@
 package ba.unsa.etf.rpr;
 
-public class GradDTO {
+public class Grad {
     private String naziv;
     private int brojStanovika;
-    private DrzavaDTO drzava;
+    private Drzava drzava;
 
-    public GradDTO() {
+    public Grad() {
     }
 
-    public GradDTO(String naziv, int brojStanovika, DrzavaDTO drzava) {
+    public Grad(String naziv, int brojStanovika, Drzava drzava) {
         this.naziv = naziv;
         this.brojStanovika = brojStanovika;
         this.drzava = drzava;
@@ -30,11 +30,11 @@ public class GradDTO {
         this.brojStanovika = brojStanovika;
     }
 
-    public DrzavaDTO getDrzava() {
+    public Drzava getDrzava() {
         return drzava;
     }
 
-    public void setDrzava(DrzavaDTO drzava) {
+    public void setDrzava(Drzava drzava) {
         this.drzava = drzava;
     }
 }
