@@ -132,4 +132,16 @@ public class GeografijaDAO {
         stmt1.setInt(3, id);
         stmt1.executeUpdate();
     }
+
+    public void dodajDrzavu(Drzava d) throws SQLException {
+        int id;
+        PreparedStatement stmt = conn.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
+        stmt.setString(1, d.getGlavniGrad().getNaziv());
+        ResultSet rs = stmt.executeQuery();
+        id = rs.getInt(1);
+        PreparedStatement stmt1 = conn.prepareStatement("INSERT INTO drzava(naziv, glavni_grad) VALUES(?, ?)");
+        stmt1.setString(1, d.getNaziv());
+        stmt1.setInt(2, id);
+        stmt1.executeUpdate();
+    }
 }
