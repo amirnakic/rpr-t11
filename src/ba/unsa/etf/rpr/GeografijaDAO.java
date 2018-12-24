@@ -2,6 +2,7 @@ package ba.unsa.etf.rpr;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.concurrent.DelayQueue;
 
 public class GeografijaDAO {
     private static GeografijaDAO instance = null;
@@ -64,8 +65,7 @@ public class GeografijaDAO {
         try {
             pripremiUpite();
             napraviTabele();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -112,88 +112,118 @@ public class GeografijaDAO {
         return d;
     }
 
-    public Grad glavniGrad(String drzava) throws SQLException {
-        Drzava d = nadjiDrzavu(drzava);
-        if (d == null)
+    public Grad glavniGrad(String drzava) {
+        try {
+            Drzava d = nadjiDrzavu(drzava);
+            if (d == null)
+                return null;
+            return d.getGlavniGrad();
+        } catch (SQLException e) {
+            e.printStackTrace();
             return null;
-        return d.getGlavniGrad();
-    }
-
-    public void obrisiGradoveUDrzavi(String drzava) throws SQLException {
-        if (nadjiDrzavu(drzava) == null)
-            return;
-        PreparedStatement stmt = obrisiGradove1;
-        stmt.setString(1, drzava);
-        ResultSet rs = stmt.executeQuery();
-        int id = rs.getInt(1);
-        PreparedStatement stmt1 = obrisiGradove2;
-        stmt1.setInt(1, id);
-        stmt1.executeUpdate();
-    }
-
-    public void obrisiDrzavu(String drzava) throws SQLException {
-        if (nadjiDrzavu(drzava) == null)
-            return;
-        obrisiGradoveUDrzavi(drzava);
-        PreparedStatement stmt = obrisiDrzavu;
-        stmt.setString(1, drzava);
-        stmt.executeUpdate();
-    }
-
-    public ArrayList<Grad> gradovi() throws SQLException {
-        ArrayList<Grad> result = new ArrayList<>();
-        PreparedStatement stmt = gradovi;
-        ResultSet rs = stmt.executeQuery();
-        while (rs.next()) {
-            Grad g = new Grad();
-            g.setNaziv(rs.getString(2));
-            g.setBrojStanovnika(rs.getInt(3));
-            Drzava d = new Drzava();
-            d.setNaziv(rs.getString(6));
-            g.setDrzava(d);
-            if (rs.getInt(1) == rs.getInt(7))
-                d.setGlavniGrad(g);
-            result.add(g);
         }
-        return result;
     }
 
-    public void dodajGrad(Grad g) throws SQLException {
-        PreparedStatement stmt = dodajGrad1;
-        stmt.setString(1, g.getDrzava().getNaziv());
-        ResultSet rs = stmt.executeQuery();
-        int id = rs.getInt(1);
-        PreparedStatement stmt1 = dodajGrad2;
-        stmt1.setString(1, g.getNaziv());
-        stmt1.setInt(2, g.getBrojStanovnika());
-        stmt1.setInt(3, id);
-        stmt1.executeUpdate();
+    public void obrisiGradoveUDrzavi(String drzava) {
+        try {
+            if (nadjiDrzavu(drzava) == null)
+                return;
+            PreparedStatement stmt = obrisiGradove1;
+            stmt.setString(1, drzava);
+            ResultSet rs = stmt.executeQuery();
+            int id = rs.getInt(1);
+            PreparedStatement stmt1 = obrisiGradove2;
+            stmt1.setInt(1, id);
+            stmt1.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void dodajDrzavu(Drzava d) throws SQLException {
-        PreparedStatement stmt = dodajDrzavu1;
-        stmt.setString(1, d.getGlavniGrad().getNaziv());
-        ResultSet rs = stmt.executeQuery();
-        int id = rs.getInt(1);
-        PreparedStatement stmt1 = dodajDrzavu2;
-        stmt1.setString(1, d.getNaziv());
-        stmt1.setInt(2, id);
-        stmt1.executeUpdate();
+    public void obrisiDrzavu(String drzava) {
+        try {
+            if (nadjiDrzavu(drzava) == null)
+                return;
+            obrisiGradoveUDrzavi(drzava);
+            PreparedStatement stmt = obrisiDrzavu;
+            stmt.setString(1, drzava);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void izmijeniGrad(Grad g) throws SQLException {
-        PreparedStatement stmt = izmijeniGrad1;
-        stmt.setString(1, g.getDrzava().getNaziv());
-        ResultSet rs = stmt.executeQuery();
-        int id = rs.getInt(1);
-        PreparedStatement stmt1 = izmijeniGrad2;
-        stmt1.setString(1, g.getNaziv());
-        stmt1.setInt(2, g.getBrojStanovnika());
-        stmt1.setInt(3, id);
-        stmt1.executeUpdate();
+    public ArrayList<Grad> gradovi() {
+        try {
+            ArrayList<Grad> result = new ArrayList<>();
+            PreparedStatement stmt = gradovi;
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Grad g = new Grad();
+                g.setNaziv(rs.getString(2));
+                g.setBrojStanovnika(rs.getInt(3));
+                Drzava d = new Drzava();
+                d.setNaziv(rs.getString(6));
+                g.setDrzava(d);
+                if (rs.getInt(1) == rs.getInt(7))
+                    d.setGlavniGrad(g);
+                result.add(g);
+            }
+            return result;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    private void dodajPodatke() throws SQLException {
+    public void dodajGrad(Grad g) {
+        try {
+            PreparedStatement stmt = dodajGrad1;
+            stmt.setString(1, g.getDrzava().getNaziv());
+            ResultSet rs = stmt.executeQuery();
+            int id = rs.getInt(1);
+            PreparedStatement stmt1 = dodajGrad2;
+            stmt1.setString(1, g.getNaziv());
+            stmt1.setInt(2, g.getBrojStanovnika());
+            stmt1.setInt(3, id);
+            stmt1.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void dodajDrzavu(Drzava d) {
+        try {
+            PreparedStatement stmt = dodajDrzavu1;
+            stmt.setString(1, d.getGlavniGrad().getNaziv());
+            ResultSet rs = stmt.executeQuery();
+            int id = rs.getInt(1);
+            PreparedStatement stmt1 = dodajDrzavu2;
+            stmt1.setString(1, d.getNaziv());
+            stmt1.setInt(2, id);
+            stmt1.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void izmijeniGrad(Grad g) {
+        try {
+            PreparedStatement stmt = izmijeniGrad1;
+            stmt.setString(1, g.getDrzava().getNaziv());
+            ResultSet rs = stmt.executeQuery();
+            int id = rs.getInt(1);
+            PreparedStatement stmt1 = izmijeniGrad2;
+            stmt1.setString(1, g.getNaziv());
+            stmt1.setInt(2, g.getBrojStanovnika());
+            stmt1.setInt(3, id);
+            stmt1.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void dodajPodatke() {
         Grad pariz = new Grad();
         pariz.setNaziv("Pariz");
         pariz.setBrojStanovnika(2200000);
