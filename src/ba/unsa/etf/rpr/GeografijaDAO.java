@@ -38,15 +38,24 @@ public class GeografijaDAO {
 
     private void napraviTabele() throws SQLException {
         Statement stmt = conn.createStatement();
-        String generirajDrzave = "CREATE TABLE \"drzava\" ( `id` INTEGER, `naziv` TEXT, `glavni_grad` INTEGER," +
-                "FOREIGN KEY(`glavni_grad`) REFERENCES `grad`, PRIMARY KEY(`id`) )";
+        String generirajDrzave = "CREATE TABLE `drzava` (\n" +
+                "\t`id`\tINTEGER NOT NULL,\n" +
+                "\t`naziv`\tTEXT,\n" +
+                "\t`glavni_grad`\tINTEGER NOT NULL,\n" +
+                "\tFOREIGN KEY(`glavni_grad`) REFERENCES `grad`(`id`),\n" +
+                "\tPRIMARY KEY(`id`)\n)";
         try {
             stmt.executeQuery(generirajDrzave);
         } catch (SQLException e) {
             // Drzave vec postoje
         }
-        String generirajGradove = "CREATE TABLE \"grad\" ( `id` INTEGER, `naziv` TEXT, `broj_stanovnika` INTEGER," +
-                " `drzava` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`drzava`) REFERENCES `drzava` )";
+        String generirajGradove = "CREATE TABLE `grad` (\n" +
+                "\t`id`\tINTEGER NOT NULL,\n" +
+                "\t`naziv`\tTEXT,\n" +
+                "\t`broj_stanovnika`\tINTEGER,\n" +
+                "\t`drzava`\tINTEGER NOT NULL,\n" +
+                "\tFOREIGN KEY(`drzava`) REFERENCES `drzava`(`id`),\n" +
+                "\tPRIMARY KEY(`id`)\n";
         try {
             stmt.executeQuery(generirajGradove);
         } catch (SQLException e) {
@@ -92,36 +101,37 @@ public class GeografijaDAO {
         instance = null;
     }
 
-    public Drzava nadjiDrzavu(String drzava) throws SQLException {
-        PreparedStatement stmt = nadjiDrzavu1;
-        stmt.setString(1, drzava);
-        ResultSet rs = stmt.executeQuery();
-        if (rs.isClosed())
+    public Drzava nadjiDrzavu(String drzava) {
+        try {
+            PreparedStatement stmt = nadjiDrzavu1;
+            stmt.setString(1, drzava);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.isClosed())
+                return null;
+            int id = rs.getInt(1);
+            Drzava d = new Drzava();
+            d.setNaziv(drzava);
+            PreparedStatement stmt1 = nadjiDrzavu2;
+            stmt1.setInt(1, id);
+            ResultSet rs1 = stmt1.executeQuery();
+            Grad g = new Grad();
+            g.setNaziv(rs1.getString(1));
+            g.setBrojStanovnika(rs1.getInt(2));
+            d.setGlavniGrad(g);
+            g.setDrzava(d);
+            return d;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
             return null;
-        int id = rs.getInt(1);
-        Drzava d = new Drzava();
-        d.setNaziv(drzava);
-        PreparedStatement stmt1 = nadjiDrzavu2;
-        stmt1.setInt(1, id);
-        ResultSet rs1 = stmt1.executeQuery();
-        Grad g = new Grad();
-        g.setNaziv(rs1.getString(1));
-        g.setBrojStanovnika(rs1.getInt(2));
-        d.setGlavniGrad(g);
-        g.setDrzava(d);
-        return d;
+        }
     }
 
     public Grad glavniGrad(String drzava) {
-        try {
             Drzava d = nadjiDrzavu(drzava);
             if (d == null)
                 return null;
             return d.getGlavniGrad();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     public void obrisiGradoveUDrzavi(String drzava) {
