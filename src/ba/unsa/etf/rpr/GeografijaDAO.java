@@ -2,65 +2,29 @@ package ba.unsa.etf.rpr;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.concurrent.DelayQueue;
 
 public class GeografijaDAO {
     private static GeografijaDAO instance = null;
     private static Connection conn;
 
-    private PreparedStatement nadjiDrzavu1;
-    private PreparedStatement nadjiDrzavu2;
-    private PreparedStatement obrisiGradove1;
-    private PreparedStatement obrisiGradove2;
-    private PreparedStatement obrisiDrzavu;
-    private PreparedStatement gradovi;
-    private PreparedStatement dodajGrad1;
-    private PreparedStatement dodajGrad2;
-    private PreparedStatement dodajDrzavu1;
-    private PreparedStatement dodajDrzavu2;
-    private PreparedStatement izmijeniGrad1;
-    private PreparedStatement izmijeniGrad2;
-
-    private void pripremiUpite() throws SQLException {
-        nadjiDrzavu1 = conn.prepareStatement("SELECT glavni_grad FROM drzava WHERE naziv = ?");
-        nadjiDrzavu2 = conn.prepareStatement("SELECT naziv, broj_stanovnika FROM grad WHERE id = ?");
-        obrisiGradove1 = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
-        obrisiGradove2 = conn.prepareStatement("DELETE * FROM grad WHERE drzava = ?");
-        obrisiDrzavu = conn.prepareStatement("DELETE * FROM drzava WHERE naziv = ?");
-        gradovi = conn.prepareStatement("SELECT grad.id, grad.naziv, grad.broj_stanovnika, grad.drzava, drzava.id, drzava.naziv, drzava.glavni_grad FROM grad, drzava WHERE grad.drzava = drzava.id ORDER BY broj_stanovnika DESC");
-        dodajGrad1 = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
-        dodajGrad2 = conn.prepareStatement("INSERT INTO grad(naziv, broj_stanovnika, drzava) VALUES(?, ?, ?)");
-        dodajDrzavu1 = conn.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
-        dodajDrzavu2 = conn.prepareStatement("INSERT INTO drzava(naziv, glavni_grad) VALUES(?, ?)");
-        izmijeniGrad1 = conn.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
-        izmijeniGrad2 = conn.prepareStatement("UPDATE grad SET naziv = ?, broj_stanovnika = ?, drzava = ? WHERE id = ?");
-    }
-
     private void napraviTabele() throws SQLException {
-        Statement stmt = conn.createStatement();
-        String generirajDrzave = "CREATE TABLE `drzava` (\n" +
-                "\t`id`\tINTEGER NOT NULL,\n" +
-                "\t`naziv`\tTEXT,\n" +
-                "\t`glavni_grad`\tINTEGER NOT NULL,\n" +
-                "\tFOREIGN KEY(`glavni_grad`) REFERENCES `grad`(`id`),\n" +
-                "\tPRIMARY KEY(`id`)\n)";
-        try {
-            stmt.executeQuery(generirajDrzave);
-        } catch (SQLException e) {
-            // Drzave vec postoje
-        }
-        String generirajGradove = "CREATE TABLE `grad` (\n" +
-                "\t`id`\tINTEGER NOT NULL,\n" +
-                "\t`naziv`\tTEXT,\n" +
-                "\t`broj_stanovnika`\tINTEGER,\n" +
-                "\t`drzava`\tINTEGER NOT NULL,\n" +
-                "\tFOREIGN KEY(`drzava`) REFERENCES `drzava`(`id`),\n" +
-                "\tPRIMARY KEY(`id`)\n";
-        try {
-            stmt.executeQuery(generirajGradove);
-        } catch (SQLException e) {
-            // Gradovi vec postoje
-        }
+        String sql = "CREATE TABLE IF NOT EXISTS gradovi (\n"
+                + "	id integer PRIMARY KEY,\n"
+                + "	naziv text NOT NULL UNIQUE,\n"
+                + " broj_stanovnika integer,\n"
+                + " drzava integer,\n"
+                + "	FOREIGN KEY(drzava) REFERENCES drzave(id) ON DELETE CASCADE\n"
+                + ");";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.execute();
+        sql = "CREATE TABLE IF NOT EXISTS drzave (\n"
+                + "	id integer PRIMARY KEY,\n"
+                + "	naziv text NOT NULL UNIQUE,\n"
+                + " glavni_grad integer,\n"
+                + "	FOREIGN KEY(glavni_grad) REFERENCES gradovi(id) ON DELETE CASCADE\n"
+                + ");";
+        stmt = conn.prepareStatement(sql);
+        stmt.execute();
         dodajPodatke();
     }
 
@@ -69,10 +33,10 @@ public class GeografijaDAO {
     }
 
     private GeografijaDAO() throws SQLException {
-        String url = "jdbc:sqlite:baza.db";
-        conn = DriverManager.getConnection(url);
+        conn = null;
         try {
-            pripremiUpite();
+            String url = "jdbc:sqlite:resources/baza.db";
+            conn = DriverManager.getConnection(url);
             napraviTabele();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -103,23 +67,33 @@ public class GeografijaDAO {
 
     public Drzava nadjiDrzavu(String drzava) {
         try {
-            PreparedStatement stmt = nadjiDrzavu1;
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM drzave WHERE naziv = ?");
             stmt.setString(1, drzava);
             ResultSet rs = stmt.executeQuery();
             if (rs.isClosed())
                 return null;
-            int id = rs.getInt(1);
             Drzava d = new Drzava();
+            d.setId(rs.getInt(1));
             d.setNaziv(drzava);
-            PreparedStatement stmt1 = nadjiDrzavu2;
-            stmt1.setInt(1, id);
-            ResultSet rs1 = stmt1.executeQuery();
-            Grad g = new Grad();
-            g.setNaziv(rs1.getString(1));
-            g.setBrojStanovnika(rs1.getInt(2));
-            d.setGlavniGrad(g);
-            g.setDrzava(d);
             return d;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public Grad nadjiGrad(String grad) {
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM gradovi WHERE naziv = ?");
+            stmt.setString(1, grad);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.isClosed())
+                return null;
+            Grad g = new Grad();
+            g.setId(rs.getInt(1));
+            g.setNaziv(rs.getString(2));
+            g.setBrojStanovnika(rs.getInt(3));
+            return g;
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -128,25 +102,40 @@ public class GeografijaDAO {
     }
 
     public Grad glavniGrad(String drzava) {
+        try {
             Drzava d = nadjiDrzavu(drzava);
             if (d == null)
                 return null;
-            return d.getGlavniGrad();
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM gradovi WHERE drzava = ?");
+            stmt.setInt(1, d.getId());
+            ResultSet rs1 = stmt.executeQuery();
+            if (rs1.isClosed())
+                return null;
+            Grad g = new Grad();
+            g.setId(rs1.getInt(1));
+            g.setNaziv(rs1.getString(2));
+            g.setBrojStanovnika(rs1.getInt(3));
+            g.setDrzava(d);
+            d.setGlavniGrad(g);
+            return g;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void obrisiGradoveUDrzavi(String drzava) {
         try {
-            if (nadjiDrzavu(drzava) == null)
+            Drzava d = nadjiDrzavu(drzava);
+            if (d == null)
                 return;
-            PreparedStatement stmt = obrisiGradove1;
-            stmt.setString(1, drzava);
-            ResultSet rs = stmt.executeQuery();
-            int id = rs.getInt(1);
-            PreparedStatement stmt1 = obrisiGradove2;
-            stmt1.setInt(1, id);
-            stmt1.executeUpdate();
+            PreparedStatement stmt = conn.prepareStatement("DELETE * FROM gradovi WHERE drzava = ?");
+            stmt.setInt(1, d.getId());
+            stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
+            return;
         }
     }
 
@@ -155,7 +144,7 @@ public class GeografijaDAO {
             if (nadjiDrzavu(drzava) == null)
                 return;
             obrisiGradoveUDrzavi(drzava);
-            PreparedStatement stmt = obrisiDrzavu;
+            PreparedStatement stmt = conn.prepareStatement("DELETE * FROM drzave WHERE naziv = ?");
             stmt.setString(1, drzava);
             stmt.executeUpdate();
         } catch (SQLException e) {
@@ -166,13 +155,15 @@ public class GeografijaDAO {
     public ArrayList<Grad> gradovi() {
         try {
             ArrayList<Grad> result = new ArrayList<>();
-            PreparedStatement stmt = gradovi;
+            PreparedStatement stmt = conn.prepareStatement("SELECT gradovi.id, gradovi.naziv, gradovi.broj_stanovnika, gradovi.drzava, drzave.id, drzave.naziv, drzave.glavni_grad FROM gradovi, drzave WHERE gradovi.drzava = drzave.id ORDER BY broj_stanovnika DESC");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 Grad g = new Grad();
+                g.setId(rs.getInt(1));
                 g.setNaziv(rs.getString(2));
                 g.setBrojStanovnika(rs.getInt(3));
                 Drzava d = new Drzava();
+                d.setId(rs.getInt(5));
                 d.setNaziv(rs.getString(6));
                 g.setDrzava(d);
                 if (rs.getInt(1) == rs.getInt(7))
@@ -188,14 +179,12 @@ public class GeografijaDAO {
 
     public void dodajGrad(Grad g) {
         try {
-            PreparedStatement stmt = dodajGrad1;
-            stmt.setString(1, g.getDrzava().getNaziv());
-            ResultSet rs = stmt.executeQuery();
-            int id = rs.getInt(1);
-            PreparedStatement stmt1 = dodajGrad2;
+            if (nadjiGrad(g.getNaziv()) != null)
+                return;
+            PreparedStatement stmt1 = conn.prepareStatement("INSERT OR REPLACE INTO gradovi(naziv, broj_stanovnika, drzava) VALUES(?, ?, ?)");
             stmt1.setString(1, g.getNaziv());
             stmt1.setInt(2, g.getBrojStanovnika());
-            stmt1.setInt(3, id);
+            stmt1.setInt(3, g.getDrzava().getId());
             stmt1.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -204,32 +193,54 @@ public class GeografijaDAO {
 
     public void dodajDrzavu(Drzava d) {
         try {
-            PreparedStatement stmt = dodajDrzavu1;
-            stmt.setString(1, d.getGlavniGrad().getNaziv());
-            ResultSet rs = stmt.executeQuery();
-            int id = rs.getInt(1);
-            PreparedStatement stmt1 = dodajDrzavu2;
+            if(nadjiDrzavu(d.getNaziv()) != null)
+                return;
+            PreparedStatement stmt1 = conn.prepareStatement("INSERT OR REPLACE INTO drzave(naziv, glavni_grad) VALUES(?, null)");
             stmt1.setString(1, d.getNaziv());
-            stmt1.setInt(2, id);
+            stmt1.executeUpdate();
+            Drzava drzava = nadjiDrzavu(d.getNaziv());
+            d.getGlavniGrad().setDrzava(d);
+            dodajGrad(d.getGlavniGrad());
+            Grad g = nadjiGrad(d.getGlavniGrad().getNaziv());
+            d.getGlavniGrad().setId(g.getId());
+            d.setId(g.getId());
+            g.setDrzava(d);
+            izmijeniGrad(g);
+            izmijeniDrzavu(d);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    public void izmijeniGrad(Grad g) {
+        try {
+            if (nadjiGrad(g.getNaziv()) == null)
+                return;
+            PreparedStatement stmt1 = conn.prepareStatement("UPDATE gradovi SET naziv = ?, broj_stanovnika = ?, drzava = ? WHERE id = ?");
+            stmt1.setString(1, g.getNaziv());
+            stmt1.setInt(2, g.getBrojStanovnika());
+            stmt1.setInt(3, g.getDrzava().getId());
+            stmt1.setInt(4, g.getId());
             stmt1.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void izmijeniGrad(Grad g) {
+    public void izmijeniDrzavu(Drzava d) {
         try {
-            PreparedStatement stmt = izmijeniGrad1;
-            stmt.setString(1, g.getDrzava().getNaziv());
-            ResultSet rs = stmt.executeQuery();
-            int id = rs.getInt(1);
-            PreparedStatement stmt1 = izmijeniGrad2;
-            stmt1.setString(1, g.getNaziv());
-            stmt1.setInt(2, g.getBrojStanovnika());
-            stmt1.setInt(3, id);
-            stmt1.executeUpdate();
-        } catch (SQLException e) {
+            if (nadjiDrzavu(d.getNaziv()) == null)
+                return;
+            PreparedStatement stmt = conn.prepareStatement("UPDATE drzave SET naziv = ?, glavni_grad = ? WHERE id = ?");
+            stmt.setString(1, d.getNaziv());
+            stmt.setInt(2, d.getGlavniGrad().getId());
+            stmt.setInt(3, d.getId());
+            stmt.executeUpdate();
+        }
+        catch (SQLException e) {
             e.printStackTrace();
+            return;
         }
     }
 
@@ -240,19 +251,23 @@ public class GeografijaDAO {
         Drzava francuska = new Drzava();
         francuska.setNaziv("Francuska");
         francuska.setGlavniGrad(pariz);
-        pariz.setDrzava(francuska);
         dodajDrzavu(francuska);
         dodajGrad(pariz);
 
         Grad london = new Grad();
         london.setNaziv("London");
         london.setBrojStanovnika(8136000);
-        Drzava velikaBritanija = new Drzava();
-        velikaBritanija.setNaziv("Velika Britanija");
-        velikaBritanija.setGlavniGrad(london);
-        london.setDrzava(velikaBritanija);
-        dodajDrzavu(velikaBritanija);
+        Drzava vb = new Drzava();
+        vb.setNaziv("Velika Britanija");
+        vb.setGlavniGrad(london);
+        dodajDrzavu(vb);
         dodajGrad(london);
+
+        Grad manchester = new Grad();
+        manchester.setNaziv("Manchester");
+        manchester.setBrojStanovnika(510746);
+        manchester.setDrzava(vb);
+        dodajGrad(manchester);
 
         Grad bec = new Grad();
         bec.setNaziv("Beč");
@@ -260,15 +275,8 @@ public class GeografijaDAO {
         Drzava austrija = new Drzava();
         austrija.setNaziv("Austrija");
         austrija.setGlavniGrad(bec);
-        bec.setDrzava(austrija);
         dodajDrzavu(austrija);
         dodajGrad(bec);
-
-        Grad mancester = new Grad();
-        mancester.setNaziv("Manchester");
-        mancester.setBrojStanovnika(510746);
-        mancester.setDrzava(velikaBritanija);
-        dodajGrad(mancester);
 
         Grad graz = new Grad();
         graz.setNaziv("Graz");
