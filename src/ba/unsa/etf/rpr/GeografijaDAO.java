@@ -35,7 +35,7 @@ public class GeografijaDAO {
     private GeografijaDAO() throws SQLException {
         conn = null;
         try {
-            String url = "jdbc:sqlite:resources/baza.db";
+            String url = "jdbc:sqlite:baza.db";
             conn = DriverManager.getConnection(url);
             napraviTabele();
         } catch (SQLException e) {
