@@ -1,15 +1,20 @@
 package ba.unsa.etf.rpr;
 
 public class Drzava {
-    private int id;
+    private int id = 0;
     private String naziv;
-    private Grad glavniGrad;
+    private Grad glavniGrad = null;
 
     public Drzava() {
     }
 
     public Drzava(int id, String naziv, Grad glavniGrad) {
         this.id = id;
+        this.naziv = naziv;
+        this.glavniGrad = glavniGrad;
+    }
+
+    public Drzava(String naziv, Grad glavniGrad) {
         this.naziv = naziv;
         this.glavniGrad = glavniGrad;
     }
