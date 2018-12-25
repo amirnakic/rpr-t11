@@ -238,13 +238,12 @@ public class GeografijaDAO {
 
     public void izmijeniGrad(Grad g) {
         try {
-            if (nadjiGrad(g.getNaziv()) == null)
-                return;
+            Grad grad = nadjiGradPoIDu(g.getId());
             PreparedStatement stmt1 = conn.prepareStatement("UPDATE gradovi SET naziv = ?, broj_stanovnika = ?, drzava = ? WHERE id = ?");
             stmt1.setString(1, g.getNaziv());
             stmt1.setInt(2, g.getBrojStanovnika());
             stmt1.setInt(3, g.getDrzava().getId());
-            stmt1.setInt(4, g.getId());
+            stmt1.setInt(4, grad.getId());
             stmt1.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
