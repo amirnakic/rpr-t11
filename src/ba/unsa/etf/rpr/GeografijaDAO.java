@@ -102,22 +102,26 @@ public class GeografijaDAO {
     }
 
     public Grad glavniGrad(String drzava) {
+        Grad g = new Grad();
         if (nadjiDrzavu(drzava) == null)
             return null;
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT gradovi.id, gradovi.naziv, broj_stanovnika, drzava, drzave.id, drzave.naziv, drzave.glavni_grad FROM gradovi INNER JOIN drzave ON gradovi.drzava = drzave.id WHERE drzave.naziv = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT gradovi.id, gradovi.naziv, broj_stanovnika, drzava, " +
+                    "drzave.id as d_id, drzave.naziv as d_naziv, drzave.glavni_grad as d_gg FROM gradovi INNER JOIN drzave ON " +
+                    "gradovi.drzava = drzave.id WHERE drzave.naziv = ?");
             stmt.setString(1, drzava);
             ResultSet rs = stmt.executeQuery();
-            Grad g = new Grad();
-            g.setId(rs.getInt(1));
-            g.setNaziv(rs.getString(2));
-            g.setBrojStanovnika(rs.getInt(3));
-            Drzava d = new Drzava();
-            d.setId(rs.getInt(5));
-            d.setNaziv(rs.getString(6));
-            d.setGlavniGrad(g);
-            g.setDrzava(d);
-            return g;
+            while (rs.next()) {
+                g.setId(rs.getInt(1));
+                g.setNaziv(rs.getString(2));
+                g.setBrojStanovnika(rs.getInt(3));
+                Drzava d = new Drzava();
+                d.setId(rs.getInt(5));
+                d.setNaziv(rs.getString(6));
+                d.setGlavniGrad(g);
+                g.setDrzava(d);
+                return g;
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -152,22 +156,44 @@ public class GeografijaDAO {
     }
 
     public ArrayList<Grad> gradovi() {
-        ArrayList<Grad> lista = new ArrayList<>();
+        ArrayList<Grad> rezultat = new ArrayList<Grad>();
         try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT gradovi.id, gradovi.naziv, broj_stanovnika, drzava, drzave.id, drzave.naziv, drzave.glavni_grad FROM gradovi INNER JOIN drzave ON gradovi.drzava = drzave.id ORDER BY broj_stanovnika DESC");
+            PreparedStatement stmt = conn.prepareStatement("SELECT gradovi.id, gradovi.naziv, broj_stanovnika, drzava, " +
+                    "drzave.id as d_id, drzave.naziv as d_naziv, drzave.glavni_grad as d_gg FROM gradovi INNER JOIN drzave ON " +
+                    "gradovi.drzava = drzave.id ORDER BY broj_stanovnika DESC");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Grad grad = new Grad(rs.getInt(1),rs.getString(2),rs.getInt(3));
-                PreparedStatement stmt1 = conn.prepareStatement("SELECT * FROM gradovi WHERE id = ?");
-                stmt1.setInt(1, rs.getInt(7));
-                ResultSet rs1 = stmt.executeQuery();
-                Grad gg = new Grad(rs1.getInt(1), rs1.getString(2), rs1.getInt(3));
-                Drzava drzava = new Drzava(rs.getInt(5), rs.getString(6), gg);
-                drzava.getGlavniGrad().setDrzava(drzava);
-                grad.setDrzava(drzava);
-                lista.add(grad);
+                Drzava d = new Drzava();
+                Grad g = new Grad();
+                g.setId(rs.getInt(1));
+                g.setNaziv(rs.getString(2));
+                g.setBrojStanovnika(rs.getInt(3));
+                d.setId(rs.getInt(5));
+                d.setNaziv(rs.getString(6));
+                Grad gg = nadjiGradPoIDu(rs.getInt(7));
+                d.setGlavniGrad(gg);
+                g.setDrzava(d);
+                rezultat.add(g);
             }
-            return lista;
+            return rezultat;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public Grad nadjiGradPoIDu(Integer id) {
+        Grad g = new Grad();
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT id, naziv, broj_stanovnika, drzava FROM gradovi WHERE id=?");
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                g.setId(rs.getInt(1));
+                g.setNaziv(rs.getString(2));
+                g.setBrojStanovnika(rs.getInt(3));
+                return g;
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
