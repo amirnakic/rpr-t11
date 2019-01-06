@@ -34,7 +34,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("geografija.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/geografija.fxml"));
         loader.setController(new Controller());
         Parent root = loader.load();
         primaryStage.setTitle("Geografija - RPR tutorijal 9");
